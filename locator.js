@@ -128,7 +128,6 @@ CB3SharedTaskManager = {
     var b = {};
     return (
       globalThis.emitter.addListener("message", function (c) {
-        // console.log(c);
         if ("sharedTaskResult" === c.type) {
           var d = c.key;
           if (!b[d]) return;
@@ -267,48 +266,65 @@ function getSupportedPPois(platform) {
 
 globalThis.emitter.addListener("message", (result) => {
   if (result.type == "sharedTaskGet") {
-    console.log("Performance requested");
     globalThis.emitter.emit("message", {
       key: result.key,
       type: "sharedTaskPerform",
     });
   } 
 });
-
-async function getAreaResult(seed, x, z, steps, tileSize, pois) {
-  const request = {
+/**
+ *  Gets structures in a given area
+ * @constructor
+ * @param {string} seed - The world seed
+ * @param {[number, number]} coords - The x and z of the middle of the area
+ * @param {string[]} pois - The structures to search for
+ * @param {object} optionals - Optional parameters
+ */
+async function getAreaResult(seed, coords, pois, optionals) {
+  let params = {
+    tileSize: 16,
+    searchWidth: 16,
+    edition: "Java",
+    javaVersion: 10200,
+    tileScale: 0.25,
+    dimension: "overworld",
+    biomeHeight: "worldSurface",
+  }
+  if (optionals) {
+    params = {...params, ...optionals}
+  }
+  [x, z] = coords
+  let request = {
     type: "check",
     params: {
       seed: seed,
       platform: {
-        label: "Java 1.20",
         cb3World: {
-          edition: "Java",
-          javaVersion: 10200,
+          edition: params.edition,
+          javaVersion: params.javaVersion,
           config: {},
         },
       },
-      tileSize: tileSize,
-      tileScale: 0.25,
+      tileSize: params.tileSize,
+      tileScale: params.tileScale,
       biomeFilter: false,
-      dimension: "overworld",
+      dimension: params.dimension,
       pois: pois,
-      showBiomes: false,
-      biomeHeight: "worldSurface",
-      showHeights: false,
+      showBiomes: true,
+      biomeHeight: params.biomeHeight,
+      showHeights: true,
     },
     tile: {
       x: x,
       z: z,
-      xL: tileSize,
-      zL: tileSize,
-      scale: 0.25,
+      xL: params.tileSize,
+      zL: params.tileSize,
+      scale: params.tileScale,
     },
   }
   let allResults = []
   let strongholdResult = null
   if (pois.includes('stronghold')) {
-    console.log("Waiting for stronghold")
     // Create promise for stronghold
     strongholdResult = new Promise((resolve) => {
     globalThis.emitter.addListener("message", (result) => {
@@ -318,16 +334,16 @@ async function getAreaResult(seed, x, z, steps, tileSize, pois) {
     })
   })
   }
-  for (let h = 0; h < steps; h++) {
-    for (let v = 0; v < steps; v++) {
+  for (let h = 0; h < params.searchWidth; h++) {
+    for (let v = 0; v < params.searchWidth; v++) {
       let result = (await getResults(request))
 
       for (const key in result.poiResults) {
         if (result.poiResults.hasOwnProperty(key)) {
           const value = result.poiResults[key];
           if (value.length > 0) {
-            value[0][0] *= tileSize
-            value[0][1] *= tileSize
+            value[0][0] *= params.tileScale
+            value[0][1] *= params.tileScale
             allResults.push({
               type: key,
               x: value[0][0],
@@ -339,9 +355,9 @@ async function getAreaResult(seed, x, z, steps, tileSize, pois) {
         }
       }
       
-      request.tile.z += tileSize
+      request.tile.z += params.tileSize
     }
-    request.tile.x += tileSize
+    request.tile.x += params.tileSize
   }
  
   // Wait for stronghold promise to resolve
@@ -367,7 +383,7 @@ async function getAreaResult(seed, x, z, steps, tileSize, pois) {
   }
   return allResults
 }
-getAreaResult("4684276156830303372", 0, 0, 16, 16, [
+getAreaResult("4684276156830303372", [0, 0], [
   // "buriedTreasure",
   // "dungeon",
   // "netherFortress",
@@ -384,8 +400,8 @@ getAreaResult("4684276156830303372", 0, 0, 16, 16, [
   // "shipwreck",
   // "desertTemple",
   // "jungleTemple",
-  // "witchHut",
-  // "igloo",
+  "witchHut",
+  "igloo",
   // "ruinedPortalOverworld",
   // "ruinedPortalNether",
   // "spawn",
