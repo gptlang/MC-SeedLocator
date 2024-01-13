@@ -139,7 +139,6 @@ CB3SharedTaskManager = {
           b[d]
             .performTask()
             .then(function (c) {
-              // console.log(c)
               globalThis.emitter.emit("message", {
                 type: "sharedTaskPerformResult",
                 key: d,
@@ -189,7 +188,7 @@ function a(b, c) {
   }
   return b === c;
 }
-function dimensionStuff(c) {
+function finder(c) {
   if (!a(i, c)) {
     var d = Object.assign({}, c.platform.cb3World, {
       seed: CB3Libs.Long.fromString(c.seed),
@@ -216,7 +215,7 @@ function dimensionStuff(c) {
 function getResults(a) {
   var b = a.tile,
     f = a.params;
-  dimensionStuff({
+  finder({
     seed: f.seed,
     platform: f.platform,
   });
@@ -229,6 +228,7 @@ function getResults(a) {
   return g(i, f.pois).then(function (a) {
     var b = null,
       e = h[f.dimension];
+      
     return (
       f.dimension === CB3Libs.Dimension.Overworld
         ? (b = c(e, i, f))
@@ -272,93 +272,131 @@ globalThis.emitter.addListener("message", (result) => {
       key: result.key,
       type: "sharedTaskPerform",
     });
-  } else {
-    console.log(result);
-  }
+  } 
 });
 
-async function getAreaResult(seed, x, y, steps, tileSize) {
+async function getAreaResult(seed, x, z, steps, tileSize, pois) {
+  const request = {
+    type: "check",
+    params: {
+      seed: seed,
+      platform: {
+        label: "Java 1.20",
+        cb3World: {
+          edition: "Java",
+          javaVersion: 10200,
+          config: {},
+        },
+      },
+      tileSize: tileSize,
+      tileScale: 0.25,
+      biomeFilter: false,
+      dimension: "overworld",
+      pois: pois,
+      showBiomes: false,
+      biomeHeight: "worldSurface",
+      showHeights: false,
+    },
+    tile: {
+      x: x,
+      z: z,
+      xL: tileSize,
+      zL: tileSize,
+      scale: 0.25,
+    },
+  }
+  let allResults = []
+  let strongholdResult = null
+  // if (pois.includes('stronghold')) {
+  //   console.log("Waiting for stronghold")
+  //   // Create promise for stronghold
+  //   strongholdResult = new Promise((resolve) => {
+  //   globalThis.emitter.addListener("message", (result) => {
+  //     if (result.type === "sharedTaskPerformResult"){
+  //       resolve(result.result)
+  //     }
+  //   })
+  // })
+  // }
   for (let h = 0; h < steps; h++) {
     for (let v = 0; v < steps; v++) {
-      let result = (await getResults({
-        type: "check",
-        params: {
-          seed: seed,
-          platform: {
-            label: "Java 1.20",
-            cb3World: {
-              edition: "Java",
-              javaVersion: 10200,
-              config: {},
-            },
-          },
-          tileSize: tileSize,
-          tileScale: 0.25,
-          biomeFilter: false,
-          dimension: "overworld",
-          pois: [
-            // "buriedTreasure",
-            // "dungeon",
-            // "netherFortress",
-            // "bastionRemnant",
-            // "endCity",
-            // "slimeChunk",
-            // "stronghold",
-            // "village",
-            // "mineshaft",
-            // "woodlandMansion",
-            // "pillagerOutpost",
-            // "oceanRuin",
-            // "oceanMonument",
-            // "shipwreck",
-            // "desertTemple",
-            // "jungleTemple",
-            "witchHut",
-            // "igloo",
-            // "ruinedPortalOverworld",
-            // "ruinedPortalNether",
-            // "spawn",
-            // "fossil",
-            // "ravine",
-            // "endGateway",
-            // "amethystGeode",
-            // "ancientCity",
-            // "itemOverworld",
-            // "oreVein",
-            // "cave",
-            // "desertWell",
-            // "trailRuin",
-          ],
-          showBiomes: false,
-          biomeHeight: "worldSurface",
-          showHeights: false,
-        },
-        tile: {
-          x: x,
-          z: y,
-          xL: tileSize,
-          zL: tileSize,
-          scale: 0.25,
-        },
-      }))
-      // Check if any key in poiResults are not empty
+      let result = (await getResults(request))
 
       for (const key in result.poiResults) {
         if (result.poiResults.hasOwnProperty(key)) {
           const value = result.poiResults[key];
-          if (Array.isArray(value) && value.length > 0) {
+          if (value.length > 0) {
+            console.log(key,value)
             value[0][0] *= tileSize
             value[0][1] *= tileSize
-            console.log(key, value)
+            allResults.push({
+              type: key,
+              x: value[0][0],
+              z: value[0][1],
+              metadata: value[0][2]
+              
+            })
           }
         }
       }
       
-      // console.log(x,y)
-      y += tileSize
+      z += tileSize
     }
     x += tileSize
   }
+ 
+  // Wait for stronghold promise to resolve
+  // if (strongholdResult) {
+  //   strongholdResult = await strongholdResult
+  //   let closestStronghold = null
+  //   await strongholdResult.forEach((coords) => {
+  //     if (!closestStronghold) {
+  //       closestStronghold = coords
+  //     } else {
+  //       if (Math.abs(coords[0] - x) < Math.abs(closestStronghold[0] - x) && Math.abs(coords[1] - z) < Math.abs(closestStronghold[1] - z)) {
+  //         closestStronghold = coords
+  //       }
+  //     }
 
+  //   })
+  //   allResults.push({
+  //     type: "stronghold",
+  //     x: closestStronghold[0],
+  //     z: closestStronghold[1],
+  //   })
+  // }
+  // return allResults
 }
-getAreaResult("4684276156830303372", 0, 0, 16, 16).then()
+getAreaResult("4684276156830303372", 0, 0, 16, 16, [
+  // "buriedTreasure",
+  // "dungeon",
+  // "netherFortress",
+  // "bastionRemnant",
+  // "endCity",
+  // "slimeChunk",
+  "stronghold",
+  "village",
+  // "mineshaft",
+  // "woodlandMansion",
+  // "pillagerOutpost",
+  // "oceanRuin",
+  // "oceanMonument",
+  // "shipwreck",
+  // "desertTemple",
+  // "jungleTemple",
+  // "witchHut",
+  // "igloo",
+  // "ruinedPortalOverworld",
+  // "ruinedPortalNether",
+  // "spawn",
+  // "fossil",
+  // "ravine",
+  // "endGateway",
+  // "amethystGeode",
+  // "ancientCity",
+  // "itemOverworld",
+  // "oreVein",
+  // "cave",
+  // "desertWell",
+  // "trailRuin",
+]).then(console.log)
