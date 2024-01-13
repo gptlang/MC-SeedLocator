@@ -1,6 +1,9 @@
 import { getAreaResult } from "./locator.js";
 
-getAreaResult("4684276156830303372", [0, 0], [
+getAreaResult(
+  "4684276156830303372",
+  [0, 0],
+  [
     // "buriedTreasure",
     // "dungeon",
     // "netherFortress",
@@ -32,4 +35,5 @@ getAreaResult("4684276156830303372", [0, 0], [
     // "cave",
     // "desertWell",
     // "trailRuin",
-  ]).then(console.log)
+  ],
+).then(console.log);

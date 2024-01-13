@@ -83,7 +83,7 @@ function c(a, b, c) {
     if (!c.showBiomes) return null;
     if (b.sizeX % d !== 0 || b.sizeZ % d !== 0)
       throw new Error(
-        "Invalid biome scale : " + d + " for size " + b.sizeX + "*" + b.sizeZ
+        "Invalid biome scale : " + d + " for size " + b.sizeX + "*" + b.sizeZ,
       );
     var e = c.biomeHeight || "worldSurface",
       f = a.getNoiseBiomeAreaAtHeightType(
@@ -92,7 +92,7 @@ function c(a, b, c) {
         b.sizeX / d,
         b.sizeZ / d,
         4 * d,
-        e
+        e,
       ),
       g =
         c.showHeights && "worldSurface" === e
@@ -102,7 +102,7 @@ function c(a, b, c) {
               b.sizeX / d,
               b.sizeZ / d,
               4 * d,
-              "oceanFloor"
+              "oceanFloor",
             ).buffer
           : void 0;
     return { biomes: f.buffer, heights: g, scale: d };
@@ -227,7 +227,7 @@ function getResults(a) {
   return g(i, f.pois).then(function (a) {
     var b = null,
       e = h[f.dimension];
-      
+
     return (
       f.dimension === CB3Libs.Dimension.Overworld
         ? (b = c(e, i, f))
@@ -270,7 +270,7 @@ globalThis.emitter.addListener("message", (result) => {
       key: result.key,
       type: "sharedTaskPerform",
     });
-  } 
+  }
 });
 /**
  *  Finds the closest structure to a given point
@@ -278,18 +278,19 @@ globalThis.emitter.addListener("message", (result) => {
  * @param {[number, number]} coords - The x and z of the point
  * @param {[number, number][]} features - The features to search
  */
-function findClosest(coords, features){
-  let closest = null
-  let closestDistance = null
+function findClosest(coords, features) {
+  let closest = null;
+  let closestDistance = null;
   features.forEach((feature) => {
-    let distance = Math.sqrt(Math.pow(coords[0] - feature.x, 2) + Math.pow(coords[1] - feature.z, 2))
+    let distance = Math.sqrt(
+      Math.pow(coords[0] - feature.x, 2) + Math.pow(coords[1] - feature.z, 2),
+    );
     if (!closest || distance < closestDistance) {
-      closest = feature
-      closestDistance = distance
+      closest = feature;
+      closestDistance = distance;
     }
-  })
-  return closest
-  
+  });
+  return closest;
 }
 /**
  *  Gets structures in a given area
@@ -308,15 +309,15 @@ export async function getAreaResult(seed, coords, pois, optionals) {
     tileScale: 0.25,
     dimension: "overworld",
     biomeHeight: "worldSurface",
-  }
+  };
   if (optionals) {
-    params = {...params, ...optionals}
+    params = { ...params, ...optionals };
   }
-  let [x, z] = coords
+  let [x, z] = coords;
   // Make the x and z center of the search area by subtracting half the search width
   // Make sure it's still an integer
-  x -= Math.round(params.searchWidth * params.tileSize / 2)
-  z -= Math.round(params.searchWidth * params.tileSize / 2)
+  x -= Math.round((params.searchWidth * params.tileSize) / 2);
+  z -= Math.round((params.searchWidth * params.tileSize) / 2);
   let request = {
     type: "check",
     params: {
@@ -344,62 +345,60 @@ export async function getAreaResult(seed, coords, pois, optionals) {
       zL: params.tileSize,
       scale: params.tileScale,
     },
-  }
-  let allResults = []
-  let strongholdResult = null
-  if (pois.includes('stronghold')) {
+  };
+  let allResults = [];
+  let strongholdResult = null;
+  if (pois.includes("stronghold")) {
     // Create promise for stronghold
     strongholdResult = new Promise((resolve) => {
-    globalThis.emitter.addListener("message", (result) => {
-      if (result.type === "sharedTaskPerformResult"){
-        resolve(result.result)
-      }
-    })
-  })
+      globalThis.emitter.addListener("message", (result) => {
+        if (result.type === "sharedTaskPerformResult") {
+          resolve(result.result);
+        }
+      });
+    });
   }
   for (let h = 0; h < params.searchWidth; h++) {
     for (let v = 0; v < params.searchWidth; v++) {
-      let result = (await getResults(request))
+      let result = await getResults(request);
 
       for (const key in result.poiResults) {
         if (result.poiResults.hasOwnProperty(key)) {
           const value = result.poiResults[key];
           if (value.length > 0) {
-            value[0][0] *= params.tileScale
-            value[0][1] *= params.tileScale
+            value[0][0] *= params.tileScale;
+            value[0][1] *= params.tileScale;
             allResults.push({
               type: key,
               x: value[0][0],
               z: value[0][1],
-              metadata: value[0][2]
-              
-            })
+              metadata: value[0][2],
+            });
           }
         }
       }
-      
-      request.tile.z += params.tileSize
+
+      request.tile.z += params.tileSize;
     }
-    request.tile.x += params.tileSize
+    request.tile.x += params.tileSize;
   }
- 
+
   // Wait for stronghold promise to resolve
   if (strongholdResult) {
-    strongholdResult = await strongholdResult
-    let closestStronghold = findClosest(coords, strongholdResult)
+    strongholdResult = await strongholdResult;
+    let closestStronghold = findClosest(coords, strongholdResult);
     allResults.push({
       type: "stronghold",
       x: closestStronghold[0] * params.tileSize,
       z: closestStronghold[1] * params.tileSize,
-      metadata: {}
-    })
+      metadata: {},
+    });
   }
-  return allResults
+  return allResults;
 }
 try {
-module.exports = {
-  getAreaResult: getAreaResult,
-  getSupportedPPois: getSupportedPPois,
-};
-} catch (e) {
-}
+  module.exports = {
+    getAreaResult: getAreaResult,
+    getSupportedPPois: getSupportedPPois,
+  };
+} catch (e) {}
