@@ -1,5 +1,5 @@
-const EventEmitter = require("node:events");
-const { superComplexWasm } = require("./superComplexWasm.js");
+import { EventEmitter } from "events";
+import { superComplexWasm } from "./superComplexWasm.js";
 globalThis.emitter = new EventEmitter();
 
 var jsonStableStringify = (function () {
@@ -123,7 +123,7 @@ function c(a, b, c) {
     }
   return { biomes: i, scale: 1 };
 }
-CB3SharedTaskManager = {
+let CB3SharedTaskManager = {
   create: function (a) {
     var b = {};
     return (
@@ -174,7 +174,7 @@ let CB3Libs = superComplexWasm();
 var g = null,
   h = null,
   i = null;
-j = CB3SharedTaskManager.create(globalThis);
+let j = CB3SharedTaskManager.create(globalThis);
 function a(b, c) {
   if ("object" == typeof b && null != b && "object" == typeof c && null != c) {
     var d = [0, 0];
@@ -245,7 +245,7 @@ function getResults(a) {
   });
 }
 
-function getSupportedPPois(platform) {
+export function getSupportedPPois(platform) {
   let c = CB3Libs.getSupportedPois(platform.cb3World);
   return {
     type: "getSupportedPois",
@@ -299,7 +299,7 @@ function findClosest(coords, features){
  * @param {string[]} pois - The structures to search for
  * @param {object} optionals - Optional parameters
  */
-async function getAreaResult(seed, coords, pois, optionals) {
+export async function getAreaResult(seed, coords, pois, optionals) {
   let params = {
     tileSize: 16,
     searchWidth: 8,
@@ -312,7 +312,7 @@ async function getAreaResult(seed, coords, pois, optionals) {
   if (optionals) {
     params = {...params, ...optionals}
   }
-  [x, z] = coords
+  let [x, z] = coords
   // Make the x and z center of the search area by subtracting half the search width
   // Make sure it's still an integer
   x -= Math.round(params.searchWidth * params.tileSize / 2)
@@ -396,36 +396,10 @@ async function getAreaResult(seed, coords, pois, optionals) {
   }
   return allResults
 }
-getAreaResult("4684276156830303372", [0, 0], [
-  // "buriedTreasure",
-  // "dungeon",
-  // "netherFortress",
-  // "bastionRemnant",
-  // "endCity",
-  // "slimeChunk",
-  "stronghold",
-  "village",
-  // "mineshaft",
-  // "woodlandMansion",
-  // "pillagerOutpost",
-  // "oceanRuin",
-  // "oceanMonument",
-  // "shipwreck",
-  // "desertTemple",
-  // "jungleTemple",
-  "witchHut",
-  "igloo",
-  // "ruinedPortalOverworld",
-  // "ruinedPortalNether",
-  // "spawn",
-  // "fossil",
-  // "ravine",
-  // "endGateway",
-  // "amethystGeode",
-  // "ancientCity",
-  // "itemOverworld",
-  // "oreVein",
-  // "cave",
-  // "desertWell",
-  // "trailRuin",
-]).then(console.log)
+try {
+module.exports = {
+  getAreaResult: getAreaResult,
+  getSupportedPPois: getSupportedPPois,
+};
+} catch (e) {
+}

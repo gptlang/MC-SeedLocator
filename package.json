@@ -1,0 +1,25 @@
+{
+  "name": "mc-seedlocator",
+  "version": "0.0.1",
+  "description": " Find structures and features using minecraft seeds (Works up to 1.20.4) ",
+  "main": "locator.js",
+  "scripts": {
+    "test": "node test_locator.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gptlang/MC-SeedLocator.git"
+  },
+  "keywords": [
+    "minecraft",
+    "hacking",
+    "cheating"
+  ],
+  "author": "gptlang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gptlang/MC-SeedLocator/issues"
+  },
+  "homepage": "https://github.com/gptlang/MC-SeedLocator",
+  "type": "module"
+}

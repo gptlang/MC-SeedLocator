@@ -1,6 +1,6 @@
-const fs = require("fs");
-const wasmbin = fs.readFileSync("./chunky.wasm");
-function superComplexWasm() {
+import { readFileSync } from "fs";
+const wasmbin = readFileSync("./chunky.wasm");
+export function superComplexWasm() {
     return (function () {
       function a(d) {
         var e = c[d];
@@ -15581,7 +15581,4 @@ function superComplexWasm() {
       );
     })();
   
-}
-module.exports = {
-    superComplexWasm: superComplexWasm,
 }
