@@ -307,17 +307,17 @@ async function getAreaResult(seed, x, z, steps, tileSize, pois) {
   }
   let allResults = []
   let strongholdResult = null
-  // if (pois.includes('stronghold')) {
-  //   console.log("Waiting for stronghold")
-  //   // Create promise for stronghold
-  //   strongholdResult = new Promise((resolve) => {
-  //   globalThis.emitter.addListener("message", (result) => {
-  //     if (result.type === "sharedTaskPerformResult"){
-  //       resolve(result.result)
-  //     }
-  //   })
-  // })
-  // }
+  if (pois.includes('stronghold')) {
+    console.log("Waiting for stronghold")
+    // Create promise for stronghold
+    strongholdResult = new Promise((resolve) => {
+    globalThis.emitter.addListener("message", (result) => {
+      if (result.type === "sharedTaskPerformResult"){
+        resolve(result.result)
+      }
+    })
+  })
+  }
   for (let h = 0; h < steps; h++) {
     for (let v = 0; v < steps; v++) {
       let result = (await getResults(request))
@@ -326,7 +326,6 @@ async function getAreaResult(seed, x, z, steps, tileSize, pois) {
         if (result.poiResults.hasOwnProperty(key)) {
           const value = result.poiResults[key];
           if (value.length > 0) {
-            console.log(key,value)
             value[0][0] *= tileSize
             value[0][1] *= tileSize
             allResults.push({
@@ -340,32 +339,33 @@ async function getAreaResult(seed, x, z, steps, tileSize, pois) {
         }
       }
       
-      z += tileSize
+      request.tile.z += tileSize
     }
-    x += tileSize
+    request.tile.x += tileSize
   }
  
   // Wait for stronghold promise to resolve
-  // if (strongholdResult) {
-  //   strongholdResult = await strongholdResult
-  //   let closestStronghold = null
-  //   await strongholdResult.forEach((coords) => {
-  //     if (!closestStronghold) {
-  //       closestStronghold = coords
-  //     } else {
-  //       if (Math.abs(coords[0] - x) < Math.abs(closestStronghold[0] - x) && Math.abs(coords[1] - z) < Math.abs(closestStronghold[1] - z)) {
-  //         closestStronghold = coords
-  //       }
-  //     }
+  if (strongholdResult) {
+    strongholdResult = await strongholdResult
+    let closestStronghold = null
+    await strongholdResult.forEach((coords) => {
+      if (!closestStronghold) {
+        closestStronghold = coords
+      } else {
+        if (Math.abs(coords[0] - x) < Math.abs(closestStronghold[0] - x) && Math.abs(coords[1] - z) < Math.abs(closestStronghold[1] - z)) {
+          closestStronghold = coords
+        }
+      }
 
-  //   })
-  //   allResults.push({
-  //     type: "stronghold",
-  //     x: closestStronghold[0],
-  //     z: closestStronghold[1],
-  //   })
-  // }
-  // return allResults
+    })
+    allResults.push({
+      type: "stronghold",
+      x: closestStronghold[0],
+      z: closestStronghold[1],
+      metadata: {}
+    })
+  }
+  return allResults
 }
 getAreaResult("4684276156830303372", 0, 0, 16, 16, [
   // "buriedTreasure",
