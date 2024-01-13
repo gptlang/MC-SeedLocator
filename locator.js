@@ -273,6 +273,25 @@ globalThis.emitter.addListener("message", (result) => {
   } 
 });
 /**
+ *  Finds the closest structure to a given point
+ * @constructor
+ * @param {[number, number]} coords - The x and z of the point
+ * @param {[number, number][]} features - The features to search
+ */
+function findClosest(coords, features){
+  let closest = null
+  let closestDistance = null
+  features.forEach((feature) => {
+    let distance = Math.sqrt(Math.pow(coords[0] - feature.x, 2) + Math.pow(coords[1] - feature.z, 2))
+    if (!closest || distance < closestDistance) {
+      closest = feature
+      closestDistance = distance
+    }
+  })
+  return closest
+  
+}
+/**
  *  Gets structures in a given area
  * @constructor
  * @param {string} seed - The world seed
@@ -283,7 +302,7 @@ globalThis.emitter.addListener("message", (result) => {
 async function getAreaResult(seed, coords, pois, optionals) {
   let params = {
     tileSize: 16,
-    searchWidth: 16,
+    searchWidth: 8,
     edition: "Java",
     javaVersion: 10200,
     tileScale: 0.25,
@@ -294,6 +313,10 @@ async function getAreaResult(seed, coords, pois, optionals) {
     params = {...params, ...optionals}
   }
   [x, z] = coords
+  // Make the x and z center of the search area by subtracting half the search width
+  // Make sure it's still an integer
+  x -= Math.round(params.searchWidth * params.tileSize / 2)
+  z -= Math.round(params.searchWidth * params.tileSize / 2)
   let request = {
     type: "check",
     params: {
@@ -363,21 +386,11 @@ async function getAreaResult(seed, coords, pois, optionals) {
   // Wait for stronghold promise to resolve
   if (strongholdResult) {
     strongholdResult = await strongholdResult
-    let closestStronghold = null
-    await strongholdResult.forEach((coords) => {
-      if (!closestStronghold) {
-        closestStronghold = coords
-      } else {
-        if (Math.abs(coords[0] - x) < Math.abs(closestStronghold[0] - x) && Math.abs(coords[1] - z) < Math.abs(closestStronghold[1] - z)) {
-          closestStronghold = coords
-        }
-      }
-
-    })
+    let closestStronghold = findClosest(coords, strongholdResult)
     allResults.push({
       type: "stronghold",
-      x: closestStronghold[0],
-      z: closestStronghold[1],
+      x: closestStronghold[0] * params.tileSize,
+      z: closestStronghold[1] * params.tileSize,
       metadata: {}
     })
   }
